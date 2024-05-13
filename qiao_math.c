@@ -1,5 +1,4 @@
 #include <GL/glew.h>
-#include "utils.h"
 
 typedef struct {
     float x;

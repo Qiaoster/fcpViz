@@ -277,7 +277,6 @@ main() {
     stbtt_bakedchar cdata[96];
     GLuint tex;
 
-    //struct nk_user_font nkFont;
     if (running) {
         printf("Loading font...");
         const char* ttfFileName = "JetBrainsMono-Regular.ttf";
@@ -375,13 +374,10 @@ main() {
             if (*text >= 32 && (int)*text < 128) {
                 stbtt_aligned_quad q;
                 stbtt_GetBakedQuad(cdata, 512, 512, *text - 32, &x, &y, &q, 1);
-/*
- */
                 glTexCoord2f(q.s0,q.t0); glVertex2f(q.x0,q.y0);
                 glTexCoord2f(q.s1,q.t0); glVertex2f(q.x1,q.y0);
                 glTexCoord2f(q.s1,q.t1); glVertex2f(q.x1,q.y1);
                 glTexCoord2f(q.s0,q.t1); glVertex2f(q.x0,q.y1);
-
             }
             ++text;
         }
