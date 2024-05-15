@@ -238,11 +238,17 @@ main() {
     }
 
     GLuint vertexArrayID, vertexBuffer, programID = 0;
-    const int vertexCount = 3;
+    const int vertexCount = 4;
     Vec4 vertexData[vertexCount];
-    vertexData[0] = Vec4_Init_xyz(-1.0f, -1.0f, 0.0f);
-    vertexData[1] = Vec4_Init_xyz(1.0f, -1.0f, 0.0f);
-    vertexData[2] = Vec4_Init_xyz(0.0f, 1.0f, 0.0f);
+    vertexData[0] = Vec4_Init_xyz(-0.5f, -0.5f, 0.0f);
+    vertexData[1] = Vec4_Init_xyz( 0.5f, -0.5f, 0.0f);
+    vertexData[2] = Vec4_Init_xyz(-0.5f,  0.5f, 0.0f);
+    vertexData[3] = Vec4_Init_xyz( 0.5f,  0.5f, 0.0f);
+
+    vertexData[0] = Vec4_Init_xyz(-0.5f, 0, 0.0f);
+    vertexData[1] = Vec4_Init_xyz( 0.5f, 0, 0.0f);
+    vertexData[2] = Vec4_Init_xyz(-0.5f,  0, 0.0f);
+    vertexData[3] = Vec4_Init_xyz( 0.5f,  0, 0.0f);
 
     Matrix4x4 x10 = Matrix4x4_Init(
         (float[16]) {
@@ -275,7 +281,7 @@ main() {
     unsigned char* ttfBuffer = (unsigned char*)malloc(sizeof(unsigned char) * 1<<25);
     unsigned char* tempBitmap = (unsigned char*)malloc(sizeof(unsigned char) * 1024*1024);
     stbtt_bakedchar cdata[96];
-    GLuint tex;
+    GLuint fontTexture;
 
     if (running) {
         printf("Loading font...");
@@ -286,9 +292,14 @@ main() {
             printf("Failed to load %s\n", ttfFileName);
         } else {
             fread(ttfBuffer, 1, 1<<25,ttfFile);
-            stbtt_BakeFontBitmap(ttfBuffer, 0, 64.0, tempBitmap, 1024, 1024, 32, 96, cdata);
-            glGenTextures(1, &tex);
-            glBindTexture(GL_TEXTURE_2D, tex);
+            stbtt_BakeFontBitmap(ttfBuffer, 0,          // read font data from this buffer
+                                 64.0,                  // font height in pixels
+                                 tempBitmap, 1024, 1024,// texture buffer, wxh in pixels
+                                 32,                    // start from this char
+                                 96,                    // render the following this many chars
+                                 cdata);                // metrics of these chars
+            glGenTextures(1, &fontTexture);
+            glBindTexture(GL_TEXTURE_2D, fontTexture);
             glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 1024, 1024, 0, GL_ALPHA, GL_UNSIGNED_BYTE, tempBitmap);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             fclose(ttfFile);
@@ -323,14 +334,13 @@ main() {
     while (running &&
            glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS &&
            glfwWindowShouldClose(window) == 0) {
-        /*
         for (int i = 0; i < vertexCount; ++i) {
-            vertexData[i] = Vec4_Transform(x10, vertexData[i]);
-            vertexData[i] = Vec4_Rotate(vertexData[i], 'z', Rad(1.0f));
+            //vertexData[i] = Vec4_Transform(x10, vertexData[i]);
+            //vertexData[i] = Vec4_Rotate(vertexData[i], 'z', Rad(1.0f));
         }
 
-        GLfloat flatVertexData[9];
-        Vec4_Flatten(flatVertexData, vertexData, vertexCount);
+        GLfloat flatVertexData[vertexCount * 4];
+        Vec4_ToFlatArray(flatVertexData, vertexData, vertexCount);
 
         glBufferData(GL_ARRAY_BUFFER, sizeof(flatVertexData), flatVertexData, GL_STATIC_DRAW);
 
@@ -351,46 +361,9 @@ main() {
             0,                  // stride
             (void*)0            // array buffer offset
         );
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, vertexCount);
         glDisableVertexAttribArray(0);
-        */
 
-        glClearColor(0.45f, 0.45f, 0.75f, 0);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glEnable(GL_TEXTURE_2D);
-        glBindTexture(GL_TEXTURE_2D, tex);
-
-        glColor3f(1,0,0);
-
-        const char* text = "This is a simple test!";
-        //DrawText(100,150,"This is a simple test!", tex, cdata);
-
-        glBegin(GL_QUADS);
-        float x, y = 0;
-        while (*text) {
-            if (*text >= 32 && (int)*text < 128) {
-                stbtt_aligned_quad q;
-                stbtt_GetBakedQuad(cdata, 512, 512, *text - 32, &x, &y, &q, 1);
-                glTexCoord2f(q.s0,q.t0); glVertex2f(q.x0,q.y0);
-                glTexCoord2f(q.s1,q.t0); glVertex2f(q.x1,q.y0);
-                glTexCoord2f(q.s1,q.t1); glVertex2f(q.x1,q.y1);
-                glTexCoord2f(q.s0,q.t1); glVertex2f(q.x0,q.y1);
-            }
-            ++text;
-        }
-        glEnd();
-
-/*
-        glBegin(GL_QUADS);
-            glTexCoord2f(0,0); glVertex2f(256,200+0);
-            glTexCoord2f(1,0); glVertex2f(768,200+0);
-            glTexCoord2f(1,1); glVertex2f(768,200+512);
-            glTexCoord2f(0,1); glVertex2f(256,200+512);
-        glEnd();
-*/
         /* nk section
         if (nk_begin(&nkContext, "Show", nk_rect(50,50,220,220), NK_WINDOW_BORDER)) {
             if (nk_button_label(&nkContext, "button")) {

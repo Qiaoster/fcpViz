@@ -1,0 +1,37 @@
+* Platform Layer
+** text drawing
+*** How does stb ttf draw string to texture?
+**** Simple API
+***** stbtt_BakeFontBitmap()
+#+BEGIN_SRC C
+  int stabtt_BakeFontBitmap(const unsigned char *data,          // fontdata, load with fread()
+                        int offset,                             // "font location", use 0 until things go wrong
+                        float pixel_height,                     // how tall do you want the font to be?
+                        unsigned char *pixels, int pw, int ph,  // bitmap to be filled in
+                        int first_char, int num_chars,          // characters to bake
+                        stbtt_bakedchar *chardata)              // "you allocate this, it's num_chars long"
+#+END_SRC
+- positive return value: equal to first unused row of bitmap
+- negative return value: number of characters that fit
+- 0: no characters fit and no rows used
+***** stbtt_GetBakedQuad()
+#+BEGIN_SRC C
+void stbtt_GetBakedQuad(const stbtt_bakedchar *chardata, int pw, int ph,  // same data as above
+                               int char_index,             // character to display
+                               float *xpos, float *ypos,   // pointers to current position in screen pixel space
+                               stbtt_aligned_quad *q,      // output: quad to draw
+                               int opengl_fillrule);       // true if opengl fill rule; false if DX9 or earlier
+// Call GetBakedQuad with char_index = 'character - first_char', and it
+// creates the quad you need to draw and advances the current position.
+//
+// The coordinate system used assumes y increases downwards.
+//
+// Characters will extend both above and below the current position;
+// see discussion of "BASELINE" above.
+//
+// It's inefficient; you might want to c&p it and optimize it.
+#+END_SRC
+*** How does opengl3 draw texture to screen?
+** nuklear integration
+*** test with default font and built-in rendering backend
+** opengl primitives

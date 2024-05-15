@@ -8,7 +8,7 @@ typedef struct {
 } Vec4;
 
 void
-Vec4_Flatten(GLfloat* floats, Vec4* vecs, int vecCount) {
+Vec4_ToFlatArray(GLfloat* floats, Vec4* vecs, int vecCount) {
     for (int i = 0; i < vecCount; ++i) {
         floats[i*3 + 0] = vecs[i].x;
         floats[i*3 + 1] = vecs[i].y;
